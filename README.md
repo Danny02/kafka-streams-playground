@@ -1,0 +1,5 @@
+kafka-consumer-groups.sh --bootstrap-server localhost:9092 --reset-offsets --group m2n-resolver2 --all-topics --to-earliest --execute
+
+kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group m2n-resolver2
+
+kafka-run-class.sh kafka.tools.GetOffsetShell  --broker-list localhost:9092 --topic betreuer-source 
