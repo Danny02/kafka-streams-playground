@@ -3,6 +3,8 @@ package com.example
 import java.nio.ByteBuffer
 import java.util.UUID
 
+import io.circe.Encoder
+import monix.eval.Task
 import monix.execution.Scheduler
 import monix.kafka._
 import monix.reactive.Observable
@@ -45,20 +47,22 @@ object BetreuerInjector extends StreamsApp {
   )
 
   val producer = KafkaProducerSink[String, String](producerCfg, Scheduler.io())
+
   examples
-    .bufferIntrospective(1024)
+    .bufferIntrospective(5)
     .consumeWith(producer)
+    .doOnFinish(_ => Task(System.exit(0)))
     .runAsync
 
   def examples: Observable[ProducerRecord[String, String]] = {
     Observable
       .fromIterable(startBetreuer)
-      .map(b => new ProducerRecord(Topics.BETREUER, b.id.toString, b.asJson.noSpaces))
+      .map(b => new ProducerRecord(Topics.BETREUER, b.id.id, b.asJson.noSpaces))
       .doOnNext(println)
   }
 
   def rndBetreuer(id: Int) = {
-    Betreuer(UUID.nameUUIDFromBytes(ByteBuffer.allocate(4).putInt(id).array()),
+    Betreuer(BetreuerId(id.hashCode().toString),
              s"${names(Random.nextInt(names.size))} ${famNames(Random.nextInt(famNames.size))}")
   }
 }

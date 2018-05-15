@@ -4,6 +4,7 @@ import java.nio.ByteBuffer
 import java.util.UUID
 
 import io.circe.{Decoder, Encoder}
+import monix.eval.Task
 import monix.execution.Scheduler
 import monix.kafka._
 import monix.reactive.Observable
@@ -35,20 +36,21 @@ object ZuordnungenInjector extends StreamsApp {
   examples
     .bufferIntrospective(1024)
     .consumeWith(producer)
+    .doOnFinish(_ => Task(System.exit(0)))
     .runAsync
 
   def examples: Observable[ProducerRecord[String, String]] = {
     Observable
       .fromIterable(startZuordnungen)
-      .map(b => new ProducerRecord(Topics.ZUORDNUNGEN, b.schulId.toString, b.asJson.noSpaces))
+      .map(b => new ProducerRecord(Topics.ZUORDNUNGEN, b.schulId.id, b.asJson.noSpaces))
       .doOnNext(println)
   }
 
   def rndZuordnungen = {
-    Zuordnungen(UUID.randomUUID(), List.tabulate(10)(_ => rndZuordnung))
+    Zuordnungen(SchulId(Random.nextString(5)), List.tabulate(10)(_ => rndZuordnung))
   }
 
   def rndZuordnung = {
-    Zuordnung(UUID.nameUUIDFromBytes(ByteBuffer.allocate(4).putInt(Random.nextInt(10)).array()), Random.nextString(10))
+    Zuordnung(BetreuerId(Random.nextInt(10).hashCode().toString), Random.nextString(10))
   }
 }
